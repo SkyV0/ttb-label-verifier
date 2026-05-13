@@ -247,10 +247,13 @@ E2E target is overridable via `PLAYWRIGHT_BASE_URL` for local runs against `yarn
 
 ## CI/CD
 
-- **GitHub Actions** ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)) — two jobs:
-  - **test** (every PR + push to `main`): `yarn typecheck` + `yarn lint` + `yarn test --ci`
-  - **e2e** (only on push to `main`): Playwright smoke against the production URL. Report uploaded as a workflow artifact on failure.
-- **Vercel** is the deploy pipeline: PRs get a preview URL, merges to `main` promote to production. Roll back from the Vercel dashboard.
+GitHub Actions is the orchestrator; Vercel is just the runtime. The workflow ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)) has three jobs that gate one another:
+
+1. **`test`** (every PR + push) — `yarn typecheck` + `yarn lint` + `yarn test --ci`. If anything red, the pipeline stops here.
+2. **`deploy`** (push to `main` only, needs `test`) — `vercel pull` + `vercel build --prod` + `vercel deploy --prebuilt --prod`. The deployment URL is exported as a job output and pinned in the workflow run summary.
+3. **`e2e`** (push to `main` only, needs `deploy`) — Playwright smoke run against **the URL that was just deployed** (not a hardcoded URL). HTML report uploaded as an artifact on success or failure.
+
+The deploy job uses three repo secrets — `VERCEL_TOKEN`, `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID`. Roll back from the Vercel dashboard if a deploy ships a bad commit.
 
 ---
 

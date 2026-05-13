@@ -1,5 +1,6 @@
 "use client";
 
+import { memo } from "react";
 import { useI18n, type I18nKey } from "@/components/I18nProvider";
 import type { FieldResult, FieldStatus, VerificationResult } from "@/lib/types";
 
@@ -28,7 +29,7 @@ const FIELD_LABEL: Record<FieldResult["key"], I18nKey> = {
   beverage_type: "form.beverage_type",
 };
 
-function FieldRow({ result }: { result: FieldResult }) {
+const FieldRow = memo(function FieldRow({ result }: { result: FieldResult }) {
   const { t } = useI18n();
   const statusLabel = t(STATUS_LABEL[result.status]);
   return (
@@ -57,7 +58,7 @@ function FieldRow({ result }: { result: FieldResult }) {
       ) : null}
     </div>
   );
-}
+});
 
 export function ResultView({
   result,
@@ -76,7 +77,11 @@ export function ResultView({
 
   return (
     <div>
-      <div className={`verdict ${result.verdict}`} role="status">
+      <div
+        className={`verdict ${result.verdict}`}
+        role="status"
+        aria-live="polite"
+      >
         {t(`verdict.${result.verdict}` as I18nKey)}
       </div>
       <div className="verdict-summary">{t(summaryKey)}</div>

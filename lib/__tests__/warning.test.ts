@@ -67,4 +67,25 @@ describe("verifyWarning", () => {
     });
     expect(result.detected).toBe(detected);
   });
+
+  it("fails when header is confirmed NOT bold even if caps + text are correct", () => {
+    const result = verifyWarning({
+      ...baseExtracted,
+      government_warning_text: CANONICAL_WARNING,
+      government_warning_header_appears_uppercase: true,
+      government_warning_header_appears_bold: false,
+    });
+    expect(result.ok).toBe(false);
+    expect(result.reasons.some((r) => /bold/i.test(r))).toBe(true);
+  });
+
+  it("passes when bold is null (uncertain) and caps + text are correct", () => {
+    const result = verifyWarning({
+      ...baseExtracted,
+      government_warning_text: CANONICAL_WARNING,
+      government_warning_header_appears_uppercase: true,
+      government_warning_header_appears_bold: null,
+    });
+    expect(result.ok).toBe(true);
+  });
 });

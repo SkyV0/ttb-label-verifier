@@ -41,7 +41,10 @@
     "verify_batch": "Verificar todo",
     "new_label": "Verificar otra etiqueta",
     "override_approve": "Anular — marcar como verificado",
-    "override_reason": "Motivo de la anulación"
+    "override_reason": "Motivo de la anulación",
+    "retry": "Reintentar",
+    "dismiss": "Cerrar",
+    "cancel": "Cancelar"
   },
   "verdict": {
     "verified": "VERIFICADO",
@@ -73,6 +76,24 @@
     "progress": "{done} de {total} procesados",
     "filter_all": "Todos",
     "filter_flagged": "Solo marcados",
+    "filter_verified": "Verificados",
+    "filter_rejected": "Rechazados",
+    "filter_review": "En revisión",
+    "search_placeholder": "Buscar archivos o campos…",
+    "search_label": "Buscar resultados",
+    "no_matches": "Ningún resultado coincide con los filtros.",
+    "showing": "Mostrando {start}–{end} de {total}",
+    "page_prev": "Página anterior",
+    "page_next": "Página siguiente",
+    "page_size": "Por página",
+    "page_indicator": "Página {page} de {pages}",
+    "col_file": "Archivo",
+    "col_verdict": "Veredicto",
+    "col_issues": "Incidencias",
+    "col_elapsed": "Tiempo",
+    "sort_asc": "Orden ascendente",
+    "sort_desc": "Orden descendente",
+    "export_csv": "Exportar CSV",
     "summary": "{verified} verificados · {review} en revisión · {rejected} rechazados"
   },
   "usage": {
@@ -87,6 +108,19 @@
     "no_application": "Ingrese los datos de la solicitud.",
     "verification_failed": "La verificación falló. Intente de nuevo.",
     "image_too_large": "Imagen demasiado grande — máx. 20 MB.",
-    "unsupported_type": "Tipo de archivo no compatible."
+    "unsupported_type": "Tipo de archivo no compatible.",
+    "missing_image": "Adjunte una imagen de la etiqueta.",
+    "missing_application": "Los datos de la solicitud son obligatorios.",
+    "invalid_application": "Los datos de la solicitud están incompletos o son inválidos.",
+    "invalid_file_type": "Tipo de archivo no compatible. Use PNG, JPG, WebP, GIF o PDF.",
+    "no_images": "Agregue al menos una imagen para verificar.",
+    "too_many_images": "Demasiados archivos — el lote máximo es de 300 etiquetas.",
+    "extraction_failed": "No se pudo leer la etiqueta. Pruebe con una imagen más clara.",
+    "rate_limited": "El servicio está ocupado. Intente de nuevo en un momento.",
+    "upstream_error": "El servicio de IA no está disponible temporalmente.",
+    "network_error": "Error de red — verifique su conexión y reintente.",
+    "request_aborted": "La solicitud fue cancelada.",
+    "boundary_title": "Algo salió mal.",
+    "boundary_detail": "Un error inesperado interrumpió esta vista. Reinicie para intentarlo de nuevo."
   }
 }

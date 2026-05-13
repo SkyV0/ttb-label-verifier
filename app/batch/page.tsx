@@ -1,9 +1,36 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import dynamic from "next/dynamic";
+import {
+  Suspense,
+  useCallback,
+  useRef,
+  useState,
+  useTransition,
+} from "react";
 import { ApplicationForm } from "@/components/ApplicationForm";
-import { useI18n, type I18nKey } from "@/components/I18nProvider";
-import type { ApplicationData, VerificationResult, Verdict } from "@/lib/types";
+import { ErrorMessage } from "@/components/ErrorMessage";
+import { useI18n } from "@/components/I18nProvider";
+import type { ApplicationData } from "@/lib/types";
+import type { ApiErrorBody, ErrorCode } from "@/lib/errors";
+import type { BatchItem } from "@/components/BatchResultsTable";
+
+const BatchResultsTable = dynamic(() => import("@/components/BatchResultsTable"), {
+  ssr: false,
+  loading: () => <TableSkeleton />,
+});
+
+function TableSkeleton() {
+  return (
+    <div aria-busy="true" aria-live="polite" style={{ marginTop: "var(--space-5)" }}>
+      <div className="skeleton skeleton--line" style={{ width: "40%" }} />
+      <div className="skeleton skeleton--row" style={{ marginTop: "var(--space-4)" }} />
+      <div className="skeleton skeleton--row" />
+      <div className="skeleton skeleton--row" />
+      <div className="skeleton skeleton--row" />
+    </div>
+  );
+}
 
 const EMPTY_APPLICATION: ApplicationData = {
   brand_name: "",
@@ -16,56 +43,68 @@ const EMPTY_APPLICATION: ApplicationData = {
   beverage_type: "spirits",
 };
 
-interface BatchItem {
-  filename: string;
-  result?: VerificationResult;
-  error?: string;
+interface ErrorState {
+  code?: ErrorCode;
+  message: string;
 }
 
 export default function BatchPage() {
   const { t } = useI18n();
   const [files, setFiles] = useState<File[]>([]);
   const [application, setApplication] = useState<ApplicationData>(EMPTY_APPLICATION);
-  const [submitting, setSubmitting] = useState(false);
   const [items, setItems] = useState<BatchItem[]>([]);
-  const [filter, setFilter] = useState<"all" | "flagged">("all");
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<ErrorState | null>(null);
+  const [isPending, startTransition] = useTransition();
+  const abortRef = useRef<AbortController | null>(null);
 
-  const summary = useMemo(() => {
-    const c = { verified: 0, needs_review: 0, rejected: 0 } as Record<Verdict, number>;
-    for (const it of items) {
-      if (it.result) c[it.result.verdict] += 1;
-    }
-    return c;
-  }, [items]);
-
-  const visible = useMemo(() => {
-    if (filter === "flagged") return items.filter((i) => i.result && i.result.verdict !== "verified");
-    return items;
-  }, [items, filter]);
-
-  const submit = async () => {
+  const submit = useCallback(() => {
     setError(null);
-    if (files.length === 0) return setError(t("error.no_file"));
-    setSubmitting(true);
-    setItems([]);
-    try {
-      const form = new FormData();
-      form.append("application", JSON.stringify(application));
-      for (const f of files) form.append("images", f);
-      const res = await fetch("/api/verify/batch", { method: "POST", body: form });
-      if (!res.ok) {
-        const body = await res.json().catch(() => ({}));
-        throw new Error(body?.message ?? t("error.verification_failed"));
-      }
-      const data = (await res.json()) as { results: BatchItem[] };
-      setItems(data.results);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : t("error.verification_failed"));
-    } finally {
-      setSubmitting(false);
+    if (files.length === 0) {
+      setError({ code: "no_images", message: t("error.no_images") });
+      return;
     }
-  };
+
+    abortRef.current?.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
+
+    startTransition(async () => {
+      setItems([]);
+      try {
+        const form = new FormData();
+        form.append("application", JSON.stringify(application));
+        for (const f of files) form.append("images", f);
+        const res = await fetch("/api/verify/batch", {
+          method: "POST",
+          body: form,
+          signal: controller.signal,
+        });
+        if (!res.ok) {
+          const body = (await res.json().catch(() => ({}))) as Partial<ApiErrorBody>;
+          setError({
+            code: body.error as ErrorCode | undefined,
+            message: body.message ?? t("error.verification_failed"),
+          });
+          return;
+        }
+        const data = (await res.json()) as { results: BatchItem[] };
+        setItems(data.results);
+      } catch (e) {
+        if ((e as Error).name === "AbortError") {
+          setError({ code: "request_aborted", message: t("error.request_aborted") });
+          return;
+        }
+        setError({
+          code: "network_error",
+          message: e instanceof Error ? e.message : t("error.network_error"),
+        });
+      }
+    });
+  }, [files, application, t]);
+
+  const cancel = useCallback(() => {
+    abortRef.current?.abort();
+  }, []);
 
   return (
     <div>
@@ -81,7 +120,7 @@ export default function BatchPage() {
             accept="image/*"
             multiple
             onChange={(e) => setFiles(Array.from(e.target.files ?? []))}
-            disabled={submitting}
+            disabled={isPending}
           />
           {files.length > 0 ? (
             <p className="muted" style={{ marginTop: "var(--space-3)" }}>
@@ -89,86 +128,51 @@ export default function BatchPage() {
             </p>
           ) : null}
         </div>
-        <ApplicationForm value={application} onChange={setApplication} disabled={submitting} />
+        <ApplicationForm value={application} onChange={setApplication} disabled={isPending} />
       </div>
 
-      {error ? <div className="error-banner" role="alert">{error}</div> : null}
+      {error ? (
+        <ErrorMessage
+          code={error.code}
+          message={error.code ? error.message : error.message}
+          onRetry={error.code === "request_aborted" ? undefined : submit}
+          onDismiss={() => setError(null)}
+          busy={isPending}
+        />
+      ) : null}
 
-      <div className="cta-row">
-        <button type="button" className="primary" onClick={submit} disabled={submitting || files.length === 0}>
-          {submitting ? t("action.verifying") : t("action.verify_batch")}
+      <div className="cta-row" style={{ gap: "var(--space-3)" }}>
+        <button
+          type="button"
+          className="primary"
+          onClick={submit}
+          disabled={isPending || files.length === 0}
+        >
+          {isPending ? t("action.verifying") : t("action.verify_batch")}
         </button>
+        {isPending ? (
+          <button type="button" onClick={cancel}>
+            {t("action.cancel")}
+          </button>
+        ) : null}
       </div>
 
-      {submitting ? (
-        <div className="progress progress--indeterminate" aria-hidden>
+      {isPending ? (
+        <div
+          className="progress progress--indeterminate"
+          role="progressbar"
+          aria-label={t("action.verifying")}
+          aria-busy="true"
+          aria-live="polite"
+        >
           <div className="progress__bar" />
         </div>
       ) : null}
 
       {items.length > 0 ? (
-        <>
-          <div className="batch-summary">
-            <div className="batch-stat verified">
-              <div className="batch-stat__value">{summary.verified}</div>
-              <div className="batch-stat__label">{t("verdict.verified")}</div>
-            </div>
-            <div className="batch-stat needs_review">
-              <div className="batch-stat__value">{summary.needs_review}</div>
-              <div className="batch-stat__label">{t("verdict.needs_review")}</div>
-            </div>
-            <div className="batch-stat rejected">
-              <div className="batch-stat__value">{summary.rejected}</div>
-              <div className="batch-stat__label">{t("verdict.rejected")}</div>
-            </div>
-          </div>
-
-          <div className="batch-controls">
-            <button type="button" aria-pressed={filter === "all"} onClick={() => setFilter("all")}>
-              {t("batch.filter_all")}
-            </button>
-            <button type="button" aria-pressed={filter === "flagged"} onClick={() => setFilter("flagged")}>
-              {t("batch.filter_flagged")}
-            </button>
-          </div>
-
-          <div className="batch-table-wrap">
-            <table className="batch-table">
-              <thead>
-                <tr>
-                  <th>File</th>
-                  <th>Verdict</th>
-                  <th>Issues</th>
-                  <th>Elapsed</th>
-                </tr>
-              </thead>
-              <tbody>
-                {visible.map((item, idx) => {
-                  if (item.error) {
-                    return (
-                      <tr key={idx}>
-                        <td>{item.filename}</td>
-                        <td className="batch-row-status rejected">ERROR</td>
-                        <td>{item.error}</td>
-                        <td>—</td>
-                      </tr>
-                    );
-                  }
-                  const r = item.result!;
-                  const issues = r.fields.filter((f) => f.status !== "match").map((f) => f.key).join(", ");
-                  return (
-                    <tr key={idx}>
-                      <td>{item.filename}</td>
-                      <td className={`batch-row-status ${r.verdict}`}>{t(`verdict.${r.verdict}` as I18nKey)}</td>
-                      <td>{r.warning.ok ? issues || "—" : "Warning + " + issues}</td>
-                      <td>{r.elapsed_ms} ms</td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        </>
+        <Suspense fallback={<TableSkeleton />}>
+          <BatchResultsTable items={items} />
+        </Suspense>
       ) : null}
     </div>
   );

@@ -1,11 +1,37 @@
 "use client";
 
-import { useState } from "react";
+import dynamic from "next/dynamic";
+import {
+  Suspense,
+  useCallback,
+  useRef,
+  useState,
+  useTransition,
+} from "react";
 import { UploadZone } from "@/components/UploadZone";
 import { ApplicationForm } from "@/components/ApplicationForm";
-import { ResultView } from "@/components/ResultView";
+import { ErrorMessage } from "@/components/ErrorMessage";
 import { useI18n } from "@/components/I18nProvider";
 import type { ApplicationData, VerificationResult } from "@/lib/types";
+import type { ApiErrorBody, ErrorCode } from "@/lib/errors";
+
+const ResultView = dynamic(
+  () => import("@/components/ResultView").then((m) => ({ default: m.ResultView })),
+  {
+    ssr: false,
+    loading: () => <ResultSkeleton />,
+  },
+);
+
+function ResultSkeleton() {
+  return (
+    <div aria-busy="true" aria-live="polite">
+      <div className="skeleton skeleton--title" />
+      <div className="skeleton skeleton--line" />
+      <div className="skeleton skeleton--card" style={{ marginTop: "var(--space-4)" }} />
+    </div>
+  );
+}
 
 const EMPTY_APPLICATION: ApplicationData = {
   brand_name: "",
@@ -18,44 +44,82 @@ const EMPTY_APPLICATION: ApplicationData = {
   beverage_type: "spirits",
 };
 
+interface ErrorState {
+  code?: ErrorCode;
+  message: string;
+}
+
 export default function HomePage() {
   const { t } = useI18n();
   const [file, setFile] = useState<File | null>(null);
   const [application, setApplication] = useState<ApplicationData>(EMPTY_APPLICATION);
   const [result, setResult] = useState<VerificationResult | null>(null);
-  const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<ErrorState | null>(null);
+  const [isPending, startTransition] = useTransition();
+  const abortRef = useRef<AbortController | null>(null);
 
-  const submit = async () => {
+  const submit = useCallback(() => {
     setError(null);
-    if (!file) return setError(t("error.no_file"));
-    setSubmitting(true);
-    try {
-      const form = new FormData();
-      form.append("image", file);
-      form.append("application", JSON.stringify(application));
-      const res = await fetch("/api/verify", { method: "POST", body: form });
-      if (!res.ok) {
-        const body = await res.json().catch(() => ({}));
-        throw new Error(body?.message ?? t("error.verification_failed"));
-      }
-      const data: VerificationResult = await res.json();
-      setResult(data);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : t("error.verification_failed"));
-    } finally {
-      setSubmitting(false);
+    if (!file) {
+      setError({ code: "missing_image", message: t("error.no_file") });
+      return;
     }
-  };
 
-  const reset = () => {
+    abortRef.current?.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
+
+    startTransition(async () => {
+      try {
+        const form = new FormData();
+        form.append("image", file);
+        form.append("application", JSON.stringify(application));
+        const res = await fetch("/api/verify", {
+          method: "POST",
+          body: form,
+          signal: controller.signal,
+        });
+
+        if (!res.ok) {
+          const body = (await res.json().catch(() => ({}))) as Partial<ApiErrorBody>;
+          setError({
+            code: body.error as ErrorCode | undefined,
+            message: body.message ?? t("error.verification_failed"),
+          });
+          return;
+        }
+        const data: VerificationResult = await res.json();
+        setResult(data);
+      } catch (e) {
+        if ((e as Error).name === "AbortError") {
+          setError({ code: "request_aborted", message: t("error.request_aborted") });
+          return;
+        }
+        setError({
+          code: "network_error",
+          message: e instanceof Error ? e.message : t("error.network_error"),
+        });
+      }
+    });
+  }, [file, application, t]);
+
+  const reset = useCallback(() => {
+    abortRef.current?.abort();
     setResult(null);
     setFile(null);
     setError(null);
-  };
+  }, []);
+
+  const cancel = useCallback(() => {
+    abortRef.current?.abort();
+  }, []);
 
   if (result) {
-    return <ResultView result={result} onReset={reset} />;
+    return (
+      <Suspense fallback={<ResultSkeleton />}>
+        <ResultView result={result} onReset={reset} />
+      </Suspense>
+    );
   }
 
   return (
@@ -65,19 +129,43 @@ export default function HomePage() {
 
       <div className="grid-2">
         <UploadZone file={file} onChange={setFile} />
-        <ApplicationForm value={application} onChange={setApplication} disabled={submitting} />
+        <ApplicationForm value={application} onChange={setApplication} disabled={isPending} />
       </div>
 
-      {error ? <div className="error-banner" role="alert">{error}</div> : null}
+      {error ? (
+        <ErrorMessage
+          code={error.code}
+          message={error.code ? error.message : error.message}
+          onRetry={error.code === "request_aborted" ? undefined : submit}
+          onDismiss={() => setError(null)}
+          busy={isPending}
+        />
+      ) : null}
 
-      <div className="cta-row">
-        <button type="button" className="primary" onClick={submit} disabled={submitting || !file}>
-          {submitting ? t("action.verifying") : t("action.verify")}
+      <div className="cta-row" style={{ gap: "var(--space-3)" }}>
+        <button
+          type="button"
+          className="primary"
+          onClick={submit}
+          disabled={isPending || !file}
+        >
+          {isPending ? t("action.verifying") : t("action.verify")}
         </button>
+        {isPending ? (
+          <button type="button" onClick={cancel}>
+            {t("action.cancel")}
+          </button>
+        ) : null}
       </div>
 
-      {submitting ? (
-        <div className="progress progress--indeterminate" aria-hidden>
+      {isPending ? (
+        <div
+          className="progress progress--indeterminate"
+          role="progressbar"
+          aria-label={t("action.verifying")}
+          aria-busy="true"
+          aria-live="polite"
+        >
           <div className="progress__bar" />
         </div>
       ) : null}

@@ -36,6 +36,13 @@ export function verifyWarning(extracted: ExtractedLabel): WarningResult {
         "The 'GOVERNMENT WARNING' header is not in ALL CAPS as required by 27 CFR §16.22.",
       );
     }
+    // Bold is only enforced when the model is confident it is NOT bold.
+    // `null` means uncertain (e.g. low resolution) — fall back to caps signal.
+    if (extracted.government_warning_header_appears_bold === false) {
+      reasons.push(
+        "The 'GOVERNMENT WARNING' header does not appear in bold as required by 27 CFR §16.22.",
+      );
+    }
     if (!normalized.startsWith(HEADER)) {
       reasons.push("Header text does not exactly match 'GOVERNMENT WARNING:' (case-sensitive).");
     }

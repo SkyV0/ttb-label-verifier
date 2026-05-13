@@ -131,12 +131,41 @@ describe("POST /api/verify", () => {
     expect(body.citations.length).toBeGreaterThan(0);
   });
 
-  it("returns 500 when the extraction call throws", async () => {
+  it("classifies Anthropic overloaded errors as 503 upstream_error", async () => {
     mockExtract.mockRejectedValueOnce(new Error("Anthropic 529 overloaded"));
+    const res = await POST(makeRequest(makeForm({})));
+    expect(res.status).toBe(503);
+    const body = await res.json();
+    expect(body.error).toBe("upstream_error");
+  });
+
+  it("returns 500 verification_failed for generic upstream errors", async () => {
+    mockExtract.mockRejectedValueOnce(new Error("kaboom"));
     const res = await POST(makeRequest(makeForm({})));
     expect(res.status).toBe(500);
     const body = await res.json();
     expect(body.error).toBe("verification_failed");
-    expect(body.message).toContain("Anthropic 529 overloaded");
+    expect(body.message).toContain("kaboom");
+  });
+
+  it("returns 415 when file type is unsupported", async () => {
+    const form = new FormData();
+    form.append(
+      "image",
+      new File([new Uint8Array([0])], "label.txt", { type: "text/plain" }),
+    );
+    form.append("application", JSON.stringify(VALID_APPLICATION));
+    const res = await POST(makeRequest(form));
+    expect(res.status).toBe(415);
+    expect((await res.json()).error).toBe("invalid_file_type");
+  });
+
+  it("returns 400 invalid_application when zod validation fails", async () => {
+    const form = makeForm({ application: { brand_name: "", class_type: "", alcohol_content: "", net_contents: "", producer_name: "", beverage_type: "spirits" } });
+    const res = await POST(makeRequest(form));
+    expect(res.status).toBe(400);
+    const body = await res.json();
+    expect(body.error).toBe("invalid_application");
+    expect(body.details).toBeTruthy();
   });
 });

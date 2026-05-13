@@ -41,7 +41,10 @@
     "verify_batch": "Verify All",
     "new_label": "Verify another label",
     "override_approve": "Override — mark as verified",
-    "override_reason": "Reason for override"
+    "override_reason": "Reason for override",
+    "retry": "Retry",
+    "dismiss": "Dismiss",
+    "cancel": "Cancel"
   },
   "verdict": {
     "verified": "VERIFIED",
@@ -73,6 +76,24 @@
     "progress": "{done} of {total} processed",
     "filter_all": "All",
     "filter_flagged": "Flagged only",
+    "filter_verified": "Verified",
+    "filter_rejected": "Rejected",
+    "filter_review": "Needs review",
+    "search_placeholder": "Search filenames or fields…",
+    "search_label": "Search results",
+    "no_matches": "No results match your filters.",
+    "showing": "Showing {start}–{end} of {total}",
+    "page_prev": "Previous page",
+    "page_next": "Next page",
+    "page_size": "Per page",
+    "page_indicator": "Page {page} of {pages}",
+    "col_file": "File",
+    "col_verdict": "Verdict",
+    "col_issues": "Issues",
+    "col_elapsed": "Elapsed",
+    "sort_asc": "Sorted ascending",
+    "sort_desc": "Sorted descending",
+    "export_csv": "Export CSV",
     "summary": "{verified} verified · {review} need review · {rejected} rejected"
   },
   "usage": {
@@ -87,6 +108,19 @@
     "no_application": "Please enter the application data.",
     "verification_failed": "Verification failed. Please try again.",
     "image_too_large": "Image is too large — max 20 MB.",
-    "unsupported_type": "Unsupported file type."
+    "unsupported_type": "Unsupported file type.",
+    "missing_image": "Please attach a label image.",
+    "missing_application": "Application data is required.",
+    "invalid_application": "Application data is incomplete or invalid.",
+    "invalid_file_type": "Unsupported file type. Use PNG, JPG, WebP, GIF, or PDF.",
+    "no_images": "Please add at least one label image to verify.",
+    "too_many_images": "Too many files — the batch limit is 300 labels.",
+    "extraction_failed": "The label could not be read. Try a clearer image.",
+    "rate_limited": "The verification service is busy. Please retry in a moment.",
+    "upstream_error": "The AI service is temporarily unavailable.",
+    "network_error": "Network error — check your connection and retry.",
+    "request_aborted": "Request was canceled.",
+    "boundary_title": "Something went wrong.",
+    "boundary_detail": "An unexpected error broke this view. Reset to try again."
   }
 }
