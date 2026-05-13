@@ -1,0 +1,92 @@
+{
+  "app": {
+    "title": "Verificador de Etiquetas TTB",
+    "subtitle": "Compare la imagen de la etiqueta con los datos de la solicitud."
+  },
+  "nav": {
+    "single": "Etiqueta única",
+    "batch": "Lote",
+    "language": "Idioma",
+    "theme": "Tema",
+    "theme_light": "Claro",
+    "theme_dark": "Oscuro",
+    "theme_system": "Sistema"
+  },
+  "upload": {
+    "dropzone_idle": "Arrastre una imagen aquí o haga clic para elegir",
+    "dropzone_active": "Suelte para subir",
+    "accepted_types": "PNG, JPG, WebP o PDF — hasta 20 MB",
+    "preview": "Vista previa de la etiqueta",
+    "remove": "Quitar"
+  },
+  "form": {
+    "heading": "Datos de la solicitud",
+    "brand_name": "Nombre de la marca",
+    "class_type": "Designación de clase / tipo",
+    "alcohol_content": "Contenido alcohólico",
+    "alcohol_placeholder": "p. ej. 45% Alc./Vol. (90 Proof)",
+    "net_contents": "Contenido neto",
+    "net_placeholder": "p. ej. 750 mL",
+    "producer_name": "Productor",
+    "producer_address": "Dirección del productor",
+    "country_of_origin": "País de origen (solo importaciones)",
+    "beverage_type": "Tipo de bebida",
+    "beverage_wine": "Vino",
+    "beverage_spirits": "Destilados",
+    "beverage_malt": "Cerveza"
+  },
+  "action": {
+    "verify": "Verificar etiqueta",
+    "verifying": "Verificando…",
+    "verify_batch": "Verificar todo",
+    "new_label": "Verificar otra etiqueta",
+    "override_approve": "Anular — marcar como verificado",
+    "override_reason": "Motivo de la anulación"
+  },
+  "verdict": {
+    "verified": "VERIFICADO",
+    "needs_review": "REVISAR",
+    "rejected": "RECHAZADO",
+    "summary_verified": "Todos los campos coinciden.",
+    "summary_review": "Algunos campos requieren revisión humana.",
+    "summary_rejected": "La advertencia gubernamental no cumple.",
+    "elapsed": "{seconds}s"
+  },
+  "field_status": {
+    "match": "Coincide",
+    "fuzzy": "Coincidencia aproximada — revisar",
+    "mismatch": "No coincide",
+    "missing": "No detectado en la etiqueta",
+    "warning_ok": "Advertencia correcta",
+    "warning_bad": "La advertencia no cumple con CFR §16.21"
+  },
+  "field": {
+    "application": "Solicitud indica",
+    "label": "Etiqueta muestra",
+    "note": "Nota"
+  },
+  "batch": {
+    "heading": "Verificación por lote",
+    "subheading": "Suba hasta 300 imágenes. Proporcione un CSV con una fila por etiqueta o aplique una solicitud a todas.",
+    "drop_images": "Suelte las imágenes aquí",
+    "drop_csv": "Suelte el CSV (una fila por etiqueta)",
+    "progress": "{done} de {total} procesados",
+    "filter_all": "Todos",
+    "filter_flagged": "Solo marcados",
+    "summary": "{verified} verificados · {review} en revisión · {rejected} rechazados"
+  },
+  "usage": {
+    "tokens_in": "{n} entrada",
+    "tokens_out": "{n} salida",
+    "cache_hit": "{n} caché",
+    "cost": "${n}",
+    "elapsed": "{n}ms"
+  },
+  "error": {
+    "no_file": "Seleccione una imagen primero.",
+    "no_application": "Ingrese los datos de la solicitud.",
+    "verification_failed": "La verificación falló. Intente de nuevo.",
+    "image_too_large": "Imagen demasiado grande — máx. 20 MB.",
+    "unsupported_type": "Tipo de archivo no compatible."
+  }
+}

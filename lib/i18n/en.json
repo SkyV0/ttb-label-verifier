@@ -1,0 +1,92 @@
+{
+  "app": {
+    "title": "TTB Label Verifier",
+    "subtitle": "Compare a label image against the application data."
+  },
+  "nav": {
+    "single": "Single Label",
+    "batch": "Batch",
+    "language": "Language",
+    "theme": "Theme",
+    "theme_light": "Light",
+    "theme_dark": "Dark",
+    "theme_system": "System"
+  },
+  "upload": {
+    "dropzone_idle": "Drop a label image here, or click to choose",
+    "dropzone_active": "Drop to upload",
+    "accepted_types": "PNG, JPG, WebP, or PDF — up to 20 MB",
+    "preview": "Label preview",
+    "remove": "Remove"
+  },
+  "form": {
+    "heading": "Application data",
+    "brand_name": "Brand name",
+    "class_type": "Class / type designation",
+    "alcohol_content": "Alcohol content",
+    "alcohol_placeholder": "e.g. 45% Alc./Vol. (90 Proof)",
+    "net_contents": "Net contents",
+    "net_placeholder": "e.g. 750 mL",
+    "producer_name": "Producer name",
+    "producer_address": "Producer address",
+    "country_of_origin": "Country of origin (imports only)",
+    "beverage_type": "Beverage type",
+    "beverage_wine": "Wine",
+    "beverage_spirits": "Distilled spirits",
+    "beverage_malt": "Malt beverage / beer"
+  },
+  "action": {
+    "verify": "Verify Label",
+    "verifying": "Verifying…",
+    "verify_batch": "Verify All",
+    "new_label": "Verify another label",
+    "override_approve": "Override — mark as verified",
+    "override_reason": "Reason for override"
+  },
+  "verdict": {
+    "verified": "VERIFIED",
+    "needs_review": "NEEDS REVIEW",
+    "rejected": "REJECTED",
+    "summary_verified": "All fields match.",
+    "summary_review": "Some fields need a human check.",
+    "summary_rejected": "Government warning is not compliant.",
+    "elapsed": "{seconds}s"
+  },
+  "field_status": {
+    "match": "Match",
+    "fuzzy": "Fuzzy match — review",
+    "mismatch": "Mismatch",
+    "missing": "Not detected on label",
+    "warning_ok": "Warning OK",
+    "warning_bad": "Warning fails CFR §16.21"
+  },
+  "field": {
+    "application": "Application says",
+    "label": "Label shows",
+    "note": "Note"
+  },
+  "batch": {
+    "heading": "Batch verification",
+    "subheading": "Drop up to 300 label images. Provide a single CSV of application data or apply one application to all.",
+    "drop_images": "Drop label images here",
+    "drop_csv": "Drop CSV (one row per label)",
+    "progress": "{done} of {total} processed",
+    "filter_all": "All",
+    "filter_flagged": "Flagged only",
+    "summary": "{verified} verified · {review} need review · {rejected} rejected"
+  },
+  "usage": {
+    "tokens_in": "{n} input",
+    "tokens_out": "{n} output",
+    "cache_hit": "{n} cache read",
+    "cost": "${n}",
+    "elapsed": "{n}ms"
+  },
+  "error": {
+    "no_file": "Please choose a label image first.",
+    "no_application": "Please enter the application data.",
+    "verification_failed": "Verification failed. Please try again.",
+    "image_too_large": "Image is too large — max 20 MB.",
+    "unsupported_type": "Unsupported file type."
+  }
+}
