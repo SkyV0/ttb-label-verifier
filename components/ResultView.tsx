@@ -1,6 +1,6 @@
 "use client";
 
-import { useI18n, type I18nKey } from "./I18nProvider";
+import { useI18n, type I18nKey } from "@/components/I18nProvider";
 import type { FieldResult, FieldStatus, VerificationResult } from "@/lib/types";
 
 const STATUS_ICONS: Record<FieldStatus, string> = {
@@ -30,20 +30,42 @@ const FIELD_LABEL: Record<FieldResult["key"], I18nKey> = {
 
 function FieldRow({ result }: { result: FieldResult }) {
   const { t } = useI18n();
+  const statusLabel = t(STATUS_LABEL[result.status]);
   return (
-    <div className="field-row">
-      <div className="field-row__label">{t(FIELD_LABEL[result.key])}</div>
-      <div className="field-row__value">{result.application || <span className="muted">—</span>}</div>
-      <div className={`field-row__icon status-${result.status}`} aria-label={t(STATUS_LABEL[result.status])} title={t(STATUS_LABEL[result.status])}>
+    <div className="field-row" role="row">
+      <div className="field-row__label" role="rowheader">
+        {t(FIELD_LABEL[result.key])}
+      </div>
+      <div className="field-row__value" role="cell">
+        {result.application || <span className="subtle">—</span>}
+      </div>
+      <div
+        className={`field-row__icon status-${result.status}`}
+        role="cell"
+        aria-label={statusLabel}
+        title={statusLabel}
+      >
         {STATUS_ICONS[result.status]}
       </div>
-      <div className="field-row__value">{result.label || <span className="muted">{t("field_status.missing")}</span>}</div>
-      {result.note ? <div className="field-row__note">{result.note}</div> : null}
+      <div className="field-row__value" role="cell">
+        {result.label || <span className="subtle">{t("field_status.missing")}</span>}
+      </div>
+      {result.note ? (
+        <div className="field-row__note" role="note">
+          {result.note}
+        </div>
+      ) : null}
     </div>
   );
 }
 
-export function ResultView({ result, onReset }: { result: VerificationResult; onReset: () => void }) {
+export function ResultView({
+  result,
+  onReset,
+}: {
+  result: VerificationResult;
+  onReset: () => void;
+}) {
   const { t } = useI18n();
   const summaryKey =
     result.verdict === "verified"
@@ -51,6 +73,7 @@ export function ResultView({ result, onReset }: { result: VerificationResult; on
       : result.verdict === "needs_review"
         ? "verdict.summary_review"
         : "verdict.summary_rejected";
+
   return (
     <div>
       <div className={`verdict ${result.verdict}`} role="status">
@@ -59,9 +82,9 @@ export function ResultView({ result, onReset }: { result: VerificationResult; on
       <div className="verdict-summary">{t(summaryKey)}</div>
 
       <h2>{t("field.label")}</h2>
-      <div className="field-table" role="table">
-        <div className="field-row" style={{ background: "var(--bg-muted)", fontWeight: 600 }} aria-hidden>
-          <div className="field-row__label">Field</div>
+      <div className="field-table" role="table" aria-label="Field comparison">
+        <div className="field-table-head" aria-hidden>
+          <div>Field</div>
           <div>{t("field.application")}</div>
           <div />
           <div>{t("field.label")}</div>
@@ -72,17 +95,29 @@ export function ResultView({ result, onReset }: { result: VerificationResult; on
       </div>
 
       {!result.warning.ok ? (
-        <div className="citations">
+        <div className="citations" role="alert">
           <h3>{t("field_status.warning_bad")}</h3>
-          <ul style={{ margin: "0 0 12px 18px", padding: 0 }}>
+          <ul style={{ margin: 0, paddingLeft: "var(--space-5)" }}>
             {result.warning.reasons.map((r) => (
               <li key={r}>{r}</li>
             ))}
           </ul>
           {result.warning.detected ? (
-            <details>
+            <details style={{ marginTop: "var(--space-3)" }}>
               <summary>Detected warning text</summary>
-              <pre style={{ whiteSpace: "pre-wrap", fontSize: 13, marginTop: 8 }}>{result.warning.detected}</pre>
+              <pre
+                style={{
+                  whiteSpace: "pre-wrap",
+                  fontSize: "var(--font-size-sm)",
+                  marginTop: "var(--space-2)",
+                  background: "var(--bg-sunken)",
+                  padding: "var(--space-3)",
+                  borderRadius: "var(--radius)",
+                  border: "1px solid var(--border)",
+                }}
+              >
+                {result.warning.detected}
+              </pre>
             </details>
           ) : null}
         </div>
@@ -101,7 +136,7 @@ export function ResultView({ result, onReset }: { result: VerificationResult; on
         </div>
       ) : null}
 
-      <div className="usage-bar" aria-label="Token usage">
+      <div className="usage-bar" aria-label="Token usage and cost">
         <span>{t("usage.elapsed", { n: result.elapsed_ms })}</span>
         <span>{t("usage.tokens_in", { n: result.usage.input_tokens })}</span>
         <span>{t("usage.tokens_out", { n: result.usage.output_tokens })}</span>
@@ -109,7 +144,7 @@ export function ResultView({ result, onReset }: { result: VerificationResult; on
         <span>{t("usage.cost", { n: result.usage.cost_usd.toFixed(4) })}</span>
       </div>
 
-      <div style={{ marginTop: 24, textAlign: "center" }}>
+      <div className="cta-row">
         <button type="button" onClick={onReset}>
           {t("action.new_label")}
         </button>

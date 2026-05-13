@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useRef, useState, type ChangeEvent, type DragEvent } from "react";
-import { useI18n } from "./I18nProvider";
+import { useI18n } from "@/components/I18nProvider";
 
 interface Props {
   file: File | null;
@@ -49,14 +49,22 @@ export function UploadZone({ file, onChange, accept = "image/*,application/pdf" 
           {previewUrl ? (
             <img src={previewUrl} alt={t("upload.preview")} className="preview-img" />
           ) : (
-            <div className="preview-img" style={{ display: "grid", placeItems: "center", color: "var(--text-muted)" }}>
+            <div
+              className="preview-img"
+              style={{
+                display: "grid",
+                placeItems: "center",
+                color: "var(--text-muted)",
+                fontWeight: 600,
+              }}
+            >
               PDF
             </div>
           )}
-          <div>
-            <div style={{ fontWeight: 600 }}>{file.name}</div>
-            <div className="muted">{(file.size / 1024 / 1024).toFixed(2)} MB</div>
-            <button type="button" style={{ marginTop: 12 }} onClick={() => handleFile(null)}>
+          <div className="stack">
+            <div style={{ fontWeight: 600, fontSize: "var(--font-size-lg)" }}>{file.name}</div>
+            <div className="subtle">{(file.size / 1024 / 1024).toFixed(2)} MB</div>
+            <button type="button" onClick={() => handleFile(null)}>
               {t("upload.remove")}
             </button>
           </div>
@@ -83,12 +91,20 @@ export function UploadZone({ file, onChange, accept = "image/*,application/pdf" 
       }}
       onDragLeave={() => setDragging(false)}
       onDrop={onDrop}
+      aria-label={t("upload.dropzone_idle")}
     >
-      <div style={{ fontSize: 20, fontWeight: 600 }}>
+      <div style={{ fontSize: "var(--font-size-lg)", fontWeight: 600 }}>
         {dragging ? t("upload.dropzone_active") : t("upload.dropzone_idle")}
       </div>
       <div className="dropzone__hint">{t("upload.accepted_types")}</div>
-      <input ref={inputRef} type="file" accept={accept} onChange={onInput} style={{ display: "none" }} />
+      <input
+        ref={inputRef}
+        type="file"
+        accept={accept}
+        onChange={onInput}
+        className="sr-only"
+        tabIndex={-1}
+      />
     </div>
   );
 }

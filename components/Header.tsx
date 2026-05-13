@@ -37,7 +37,6 @@ function LocaleSwitcher() {
       className="icon-button"
       value={locale}
       onChange={(e) => setLocale(e.target.value as Locale)}
-      style={{ paddingRight: 26 }}
     >
       {LOCALES.map((l) => (
         <option key={l} value={l}>

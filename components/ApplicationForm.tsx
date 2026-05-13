@@ -15,7 +15,7 @@ export function ApplicationForm({ value, onChange, disabled }: Props) {
     onChange({ ...value, [key]: v });
   return (
     <div className="card">
-      <h2 style={{ marginTop: 0 }}>{t("form.heading")}</h2>
+      <h2>{t("form.heading")}</h2>
       <div className="form-grid">
         <div>
           <label htmlFor="brand_name">{t("form.brand_name")}</label>

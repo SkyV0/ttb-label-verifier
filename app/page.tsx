@@ -61,20 +61,26 @@ export default function HomePage() {
   return (
     <div>
       <h1>{t("app.title")}</h1>
-      <p className="muted" style={{ fontSize: 18 }}>{t("app.subtitle")}</p>
+      <p className="lede">{t("app.subtitle")}</p>
 
-      <div className="grid-2" style={{ marginTop: 24 }}>
+      <div className="grid-2">
         <UploadZone file={file} onChange={setFile} />
         <ApplicationForm value={application} onChange={setApplication} disabled={submitting} />
       </div>
 
       {error ? <div className="error-banner" role="alert">{error}</div> : null}
 
-      <div style={{ textAlign: "center", marginTop: 32 }}>
+      <div className="cta-row">
         <button type="button" className="primary" onClick={submit} disabled={submitting || !file}>
           {submitting ? t("action.verifying") : t("action.verify")}
         </button>
       </div>
+
+      {submitting ? (
+        <div className="progress progress--indeterminate" aria-hidden>
+          <div className="progress__bar" />
+        </div>
+      ) : null}
     </div>
   );
 }

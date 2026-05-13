@@ -70,13 +70,11 @@ export default function BatchPage() {
   return (
     <div>
       <h1>{t("batch.heading")}</h1>
-      <p className="muted" style={{ fontSize: 18 }}>{t("batch.subheading")}</p>
+      <p className="lede">{t("batch.subheading")}</p>
 
-      <div className="grid-2" style={{ marginTop: 24 }}>
+      <div className="grid-2">
         <div className="card">
-          <label htmlFor="images" style={{ fontSize: 16, marginBottom: 12 }}>
-            {t("batch.drop_images")}
-          </label>
+          <label htmlFor="images">{t("batch.drop_images")}</label>
           <input
             id="images"
             type="file"
@@ -86,9 +84,9 @@ export default function BatchPage() {
             disabled={submitting}
           />
           {files.length > 0 ? (
-            <div className="muted" style={{ marginTop: 12 }}>
+            <p className="muted" style={{ marginTop: "var(--space-3)" }}>
               {files.length} files selected
-            </div>
+            </p>
           ) : null}
         </div>
         <ApplicationForm value={application} onChange={setApplication} disabled={submitting} />
@@ -96,15 +94,15 @@ export default function BatchPage() {
 
       {error ? <div className="error-banner" role="alert">{error}</div> : null}
 
-      <div style={{ textAlign: "center", marginTop: 28 }}>
+      <div className="cta-row">
         <button type="button" className="primary" onClick={submit} disabled={submitting || files.length === 0}>
           {submitting ? t("action.verifying") : t("action.verify_batch")}
         </button>
       </div>
 
       {submitting ? (
-        <div className="progress" aria-hidden>
-          <div className="progress__bar" style={{ width: "60%" }} />
+        <div className="progress progress--indeterminate" aria-hidden>
+          <div className="progress__bar" />
         </div>
       ) : null}
 
@@ -125,7 +123,7 @@ export default function BatchPage() {
             </div>
           </div>
 
-          <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
+          <div className="batch-controls">
             <button type="button" aria-pressed={filter === "all"} onClick={() => setFilter("all")}>
               {t("batch.filter_all")}
             </button>
@@ -134,40 +132,42 @@ export default function BatchPage() {
             </button>
           </div>
 
-          <table className="batch-table">
-            <thead>
-              <tr>
-                <th>File</th>
-                <th>Verdict</th>
-                <th>Issues</th>
-                <th>Elapsed</th>
-              </tr>
-            </thead>
-            <tbody>
-              {visible.map((item, idx) => {
-                if (item.error) {
+          <div className="batch-table-wrap">
+            <table className="batch-table">
+              <thead>
+                <tr>
+                  <th>File</th>
+                  <th>Verdict</th>
+                  <th>Issues</th>
+                  <th>Elapsed</th>
+                </tr>
+              </thead>
+              <tbody>
+                {visible.map((item, idx) => {
+                  if (item.error) {
+                    return (
+                      <tr key={idx}>
+                        <td>{item.filename}</td>
+                        <td className="batch-row-status rejected">ERROR</td>
+                        <td>{item.error}</td>
+                        <td>—</td>
+                      </tr>
+                    );
+                  }
+                  const r = item.result!;
+                  const issues = r.fields.filter((f) => f.status !== "match").map((f) => f.key).join(", ");
                   return (
                     <tr key={idx}>
                       <td>{item.filename}</td>
-                      <td className="batch-row-status rejected">ERROR</td>
-                      <td>{item.error}</td>
-                      <td>—</td>
+                      <td className={`batch-row-status ${r.verdict}`}>{t(`verdict.${r.verdict}` as I18nKey)}</td>
+                      <td>{r.warning.ok ? issues || "—" : "Warning + " + issues}</td>
+                      <td>{r.elapsed_ms} ms</td>
                     </tr>
                   );
-                }
-                const r = item.result!;
-                const issues = r.fields.filter((f) => f.status !== "match").map((f) => f.key).join(", ");
-                return (
-                  <tr key={idx}>
-                    <td>{item.filename}</td>
-                    <td className={`batch-row-status ${r.verdict}`}>{t(`verdict.${r.verdict}` as I18nKey)}</td>
-                    <td>{r.warning.ok ? issues || "—" : "Warning + " + issues}</td>
-                    <td>{r.elapsed_ms} ms</td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+                })}
+              </tbody>
+            </table>
+          </div>
         </>
       ) : null}
     </div>
