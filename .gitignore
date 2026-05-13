@@ -14,5 +14,10 @@ tsconfig.tsbuildinfo
 .claude/
 .agents/
 
+# Playwright
+test-results/
+playwright-report/
+playwright/.cache/
+
 # The take-home PDF itself is the assignment, not the deliverable.
 Take-Home Project*.pdf

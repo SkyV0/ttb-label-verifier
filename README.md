@@ -219,12 +219,38 @@ Token usage shown in the footer of every result so you can verify the math live.
 ## Scripts
 
 ```bash
-yarn dev        # local dev server (Turbopack)
-yarn build      # production build
-yarn start      # serve the production build
-yarn typecheck  # tsc --noEmit
-yarn lint       # next lint
+yarn dev               # local dev server (Turbopack)
+yarn build             # production build
+yarn start             # serve the production build
+yarn typecheck         # tsc --noEmit
+yarn lint              # next lint
+yarn format            # prettier --write .
+yarn test              # Jest — unit + component + API route (52 tests)
+yarn test:watch        # Jest watch mode
+yarn test:coverage     # Jest with coverage report
+yarn test:e2e:install  # one-time: install Playwright Chromium
+yarn test:e2e          # Playwright smoke against the deployed URL
 ```
+
+---
+
+## Testing
+
+| Layer | Runner | Files | What it covers |
+|---|---|---|---|
+| `lib/` unit | Jest | [`lib/__tests__/`](lib/__tests__/) | `normalize`, `similarity`, `parseAbv` / `parseVolumeMl`, `verifyWarning`, the full `runVerificationEngine` decision tree, and `citationsForVerdict` per beverage type. 36 tests. |
+| API route | Jest (node env) | [`app/api/verify/__tests__/route.test.ts`](app/api/verify/__tests__/route.test.ts) | `POST /api/verify` with the Anthropic SDK mocked — happy path, missing image, missing application, warning failure, upstream errors. 5 tests. |
+| Component | Jest (jsdom) + RTL | [`components/__tests__/`](components/__tests__/) | `ResultView`, `ApplicationForm`, `UploadZone` — render + user interaction + i18n. 11 tests. |
+| E2E | Playwright | [`tests/e2e/smoke.spec.ts`](tests/e2e/smoke.spec.ts) | Production smoke against the live Vercel URL — page load, theme cycle, locale switch, batch route, API reachability. Does **not** exercise `/api/verify` end-to-end (would burn Anthropic tokens on every CI run). |
+
+E2E target is overridable via `PLAYWRIGHT_BASE_URL` for local runs against `yarn dev`.
+
+## CI/CD
+
+- **GitHub Actions** ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)) — two jobs:
+  - **test** (every PR + push to `main`): `yarn typecheck` + `yarn lint` + `yarn test --ci`
+  - **e2e** (only on push to `main`): Playwright smoke against the production URL. Report uploaded as a workflow artifact on failure.
+- **Vercel** is the deploy pipeline: PRs get a preview URL, merges to `main` promote to production. Roll back from the Vercel dashboard.
 
 ---
 
