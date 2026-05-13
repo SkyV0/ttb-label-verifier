@@ -119,7 +119,7 @@ jobs:
         run: yarn test:e2e
         timeout-minutes: 3
         env:
-          PLAYWRIGHT_BASE_URL: ${{ needs.deploy.outputs.url }}
+          PLAYWRIGHT_BASE_URL: ${{ needs.deploy.outputs.url || 'https://ttb-label-verifier-gmzkuibjk-skyv0s-projects.vercel.app' }}
 
       - name: Upload Playwright report
         if: always()
