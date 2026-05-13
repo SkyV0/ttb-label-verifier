@@ -15,7 +15,7 @@
   "upload": {
     "dropzone_idle": "Drop a label image here, or click to choose",
     "dropzone_active": "Drop to upload",
-    "accepted_types": "PNG, JPG, WebP, or PDF — up to 20 MB",
+    "accepted_types": "PNG, JPG, WebP, or GIF — up to 20 MB",
     "preview": "Label preview",
     "remove": "Remove"
   },
@@ -44,7 +44,10 @@
     "override_reason": "Reason for override",
     "retry": "Retry",
     "dismiss": "Dismiss",
-    "cancel": "Cancel"
+    "cancel": "Cancel",
+    "try_sample": "Try with sample",
+    "try_sample_batch": "Try with sample batch",
+    "try_sample_hint": "Loads a generated label and prefills the form — no upload from your machine."
   },
   "verdict": {
     "verified": "VERIFIED",
@@ -70,7 +73,7 @@
   },
   "batch": {
     "heading": "Batch verification",
-    "subheading": "Drop up to 300 label images. Provide a single CSV of application data or apply one application to all.",
+    "subheading": "Drop up to 80 label images and apply one application's data to all of them.",
     "drop_images": "Drop label images here",
     "drop_csv": "Drop CSV (one row per label)",
     "progress": "{done} of {total} processed",
@@ -112,9 +115,9 @@
     "missing_image": "Please attach a label image.",
     "missing_application": "Application data is required.",
     "invalid_application": "Application data is incomplete or invalid.",
-    "invalid_file_type": "Unsupported file type. Use PNG, JPG, WebP, GIF, or PDF.",
+    "invalid_file_type": "Unsupported file type. Use PNG, JPG, WebP, or GIF.",
     "no_images": "Please add at least one label image to verify.",
-    "too_many_images": "Too many files — the batch limit is 300 labels.",
+    "too_many_images": "Too many files — the batch limit is 80 labels.",
     "extraction_failed": "The label could not be read. Try a clearer image.",
     "rate_limited": "The verification service is busy. Please retry in a moment.",
     "upstream_error": "The AI service is temporarily unavailable.",

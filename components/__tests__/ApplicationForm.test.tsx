@@ -1,5 +1,6 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, type RenderOptions } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { FormProvider, useForm, type UseFormReturn } from "react-hook-form";
 import { I18nProvider } from "@/components/I18nProvider";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { ApplicationForm } from "@/components/ApplicationForm";
@@ -16,17 +17,38 @@ const EMPTY: ApplicationData = {
   beverage_type: "spirits",
 };
 
-function wrap(ui: React.ReactNode) {
+function Harness({
+  disabled,
+  formRef,
+}: {
+  disabled?: boolean;
+  formRef?: (f: UseFormReturn<ApplicationData>) => void;
+}) {
+  const form = useForm<ApplicationData>({ defaultValues: EMPTY });
+  formRef?.(form);
   return (
-    <ThemeProvider>
-      <I18nProvider>{ui}</I18nProvider>
-    </ThemeProvider>
+    <FormProvider {...form}>
+      <ApplicationForm disabled={disabled} />
+    </FormProvider>
   );
+}
+
+function renderHarness(props: { disabled?: boolean } = {}, opts?: RenderOptions) {
+  let captured: UseFormReturn<ApplicationData> | undefined;
+  const result = render(
+    <ThemeProvider>
+      <I18nProvider>
+        <Harness {...props} formRef={(f) => (captured = f)} />
+      </I18nProvider>
+    </ThemeProvider>,
+    opts,
+  );
+  return { ...result, getForm: () => captured! };
 }
 
 describe("<ApplicationForm />", () => {
   it("renders all eight application fields", () => {
-    render(wrap(<ApplicationForm value={EMPTY} onChange={() => {}} />));
+    renderHarness();
     expect(screen.getByLabelText(/Brand name/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/Class \/ type designation/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/Alcohol content/i)).toBeInTheDocument();
@@ -37,16 +59,15 @@ describe("<ApplicationForm />", () => {
     expect(screen.getByLabelText(/Beverage type/i)).toBeInTheDocument();
   });
 
-  it("calls onChange when the user types into a field", async () => {
+  it("updates form state when the user types into a field", async () => {
     const user = userEvent.setup();
-    const onChange = jest.fn();
-    render(wrap(<ApplicationForm value={EMPTY} onChange={onChange} />));
-    await user.type(screen.getByLabelText(/Brand name/i), "X");
-    expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ brand_name: "X" }));
+    const { getForm } = renderHarness();
+    await user.type(screen.getByLabelText(/Brand name/i), "ABC");
+    expect(getForm().getValues("brand_name")).toBe("ABC");
   });
 
   it("disables every input when disabled prop is true", () => {
-    render(wrap(<ApplicationForm value={EMPTY} onChange={() => {}} disabled />));
+    renderHarness({ disabled: true });
     expect(screen.getByLabelText(/Brand name/i)).toBeDisabled();
     expect(screen.getByLabelText(/Beverage type/i)).toBeDisabled();
   });

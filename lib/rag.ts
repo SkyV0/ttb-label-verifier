@@ -70,6 +70,19 @@ const CHUNKS: CfrChunk[] = [
   },
 ];
 
+/**
+ * Build a public ecfr.gov URL for a CFR citation. Lets the UI link to the
+ * regulation an agent can click through to verify the AI's reasoning — Dave
+ * Morrison's "you can't pattern-match everything" concern, answered with the
+ * primary source. Returns null for malformed sections so the UI can fall back
+ * to plain text.
+ */
+export function citationUrl(section: string): string | null {
+  const match = section.match(/^(\d+)\s*CFR\s*§\s*([\d.]+)/);
+  if (!match) return null;
+  return `https://www.ecfr.gov/current/title-${match[1]}/section-${match[2]}`;
+}
+
 export function citationsForVerdict(
   beverage: BeverageType,
   fields: FieldResult[],

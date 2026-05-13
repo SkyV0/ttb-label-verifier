@@ -23,8 +23,19 @@ function compareText(
   application: string,
   label: string | null,
 ): FieldResult {
+  // Application is empty but label printed a value — surface it for human review
+  // rather than silently passing (the previous behaviour returned "match", which
+  // hid a real discrepancy on a federal compliance tool).
   if (!application) {
-    return { key, status: "match", application, label: label ?? null };
+    return label
+      ? {
+          key,
+          status: "missing",
+          application,
+          label,
+          note: "Application did not provide this field; label shows a value.",
+        }
+      : { key, status: "match", application, label: null };
   }
   if (!label) {
     return { key, status: "missing", application, label: null };
@@ -38,7 +49,15 @@ function compareAbv(application: string, label: string | null): FieldResult {
   const labelVal = parseAbv(label ?? null);
 
   if (appVal === null) {
-    return { key: "alcohol_content", status: "match", application, label };
+    // Application value is required (Zod min(1)) — if we can't parse it, the
+    // operator typed something un-numeric. Don't silently pass; route to manual.
+    return {
+      key: "alcohol_content",
+      status: "missing",
+      application,
+      label,
+      note: "Application ABV could not be parsed — manual check required.",
+    };
   }
   if (labelVal === null) {
     return { key: "alcohol_content", status: "missing", application, label };
@@ -76,7 +95,13 @@ function compareNetContents(application: string, label: string | null): FieldRes
   const labelMl = parseVolumeMl(label ?? null);
 
   if (appMl === null) {
-    return { key: "net_contents", status: "match", application, label };
+    return {
+      key: "net_contents",
+      status: "missing",
+      application,
+      label,
+      note: "Application net contents could not be parsed — manual check required.",
+    };
   }
   if (labelMl === null) {
     return { key: "net_contents", status: "missing", application, label };
@@ -103,9 +128,13 @@ export function runVerificationEngine(
     compareAbv(application.alcohol_content, extracted.alcohol_content_text),
     compareNetContents(application.net_contents, extracted.net_contents_text),
     compareText("producer_name", application.producer_name, extracted.producer_name),
-    compareText("producer_address", application.producer_address, extracted.producer_address),
   ];
 
+  // Optional fields: only verify if the application actually supplied them.
+  // Otherwise we'd flag every domestic bottle for missing country_of_origin.
+  if (application.producer_address) {
+    fields.push(compareText("producer_address", application.producer_address, extracted.producer_address));
+  }
   if (application.country_of_origin) {
     fields.push(compareText("country_of_origin", application.country_of_origin, extracted.country_of_origin));
   }

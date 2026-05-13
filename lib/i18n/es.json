@@ -15,7 +15,7 @@
   "upload": {
     "dropzone_idle": "Arrastre una imagen aquí o haga clic para elegir",
     "dropzone_active": "Suelte para subir",
-    "accepted_types": "PNG, JPG, WebP o PDF — hasta 20 MB",
+    "accepted_types": "PNG, JPG, WebP o GIF — hasta 20 MB",
     "preview": "Vista previa de la etiqueta",
     "remove": "Quitar"
   },
@@ -44,7 +44,10 @@
     "override_reason": "Motivo de la anulación",
     "retry": "Reintentar",
     "dismiss": "Cerrar",
-    "cancel": "Cancelar"
+    "cancel": "Cancelar",
+    "try_sample": "Probar con muestra",
+    "try_sample_batch": "Probar con lote de muestra",
+    "try_sample_hint": "Carga una etiqueta generada y rellena el formulario — no se sube nada desde su equipo."
   },
   "verdict": {
     "verified": "VERIFICADO",
@@ -70,7 +73,7 @@
   },
   "batch": {
     "heading": "Verificación por lote",
-    "subheading": "Suba hasta 300 imágenes. Proporcione un CSV con una fila por etiqueta o aplique una solicitud a todas.",
+    "subheading": "Suba hasta 80 imágenes y aplique los datos de una solicitud a todas.",
     "drop_images": "Suelte las imágenes aquí",
     "drop_csv": "Suelte el CSV (una fila por etiqueta)",
     "progress": "{done} de {total} procesados",
@@ -112,9 +115,9 @@
     "missing_image": "Adjunte una imagen de la etiqueta.",
     "missing_application": "Los datos de la solicitud son obligatorios.",
     "invalid_application": "Los datos de la solicitud están incompletos o son inválidos.",
-    "invalid_file_type": "Tipo de archivo no compatible. Use PNG, JPG, WebP, GIF o PDF.",
+    "invalid_file_type": "Tipo de archivo no compatible. Use PNG, JPG, WebP o GIF.",
     "no_images": "Agregue al menos una imagen para verificar.",
-    "too_many_images": "Demasiados archivos — el lote máximo es de 300 etiquetas.",
+    "too_many_images": "Demasiados archivos — el lote máximo es de 80 etiquetas.",
     "extraction_failed": "No se pudo leer la etiqueta. Pruebe con una imagen más clara.",
     "rate_limited": "El servicio está ocupado. Intente de nuevo en un momento.",
     "upstream_error": "El servicio de IA no está disponible temporalmente.",

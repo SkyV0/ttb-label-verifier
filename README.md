@@ -2,13 +2,17 @@
 
 An AI-powered prototype that helps a TTB compliance agent verify an alcohol beverage label image against the application data — in under five seconds.
 
-Built as a take-home project. Deployed at the URL in your interview thread.
+Built as a take-home project.
+
+**Live deployment:** <https://ttb-label-verifier-three.vercel.app>
+
+Try it without setting up anything: open the URL, click **Try with sample** on the single-label page, and watch the verdict land in ~3 seconds. The batch page has the same affordance.
 
 ---
 
 ## What it does
 
-A compliance agent uploads a label image (PNG / JPG / WebP / PDF) and enters the application data (brand name, class/type, ABV, net contents, producer, country of origin). The app:
+A compliance agent uploads a label image (PNG / JPG / WebP / GIF, up to 20 MB) and enters the application data (brand name, class/type, ABV, net contents, producer, country of origin). The app:
 
 1. **Resizes the image** server-side to the optimal resolution for Claude vision (≤ 2576px).
 2. **Extracts the label fields** with a single Claude Sonnet 4.6 vision call using `tool_use`-enforced structured output — no free-text parsing.
@@ -210,7 +214,7 @@ Token usage shown in the footer of every result so you can verify the math live.
 ## Limitations to flag
 
 - **Vision quality on extremely low-resolution images** (< 600px) — the model will still extract, but confidence drops. Mitigated by `sharp`'s natural floor; no client-side warning shown yet.
-- **PDF support** is best-effort — Anthropic vision accepts JPEG/PNG/WebP/GIF directly. PDFs are converted to JPEG on the server; multi-page PDFs use page 1 only.
+- **PDF is intentionally not supported.** Prebuilt `sharp` binaries ship without libvips poppler input, so PDFs would crash the pipeline before reaching the vision model. The MIME validator rejects them up front. If compliance needs PDF in production, rasterize page 1 with `pdfjs-dist` before handing to `sharp`.
 - **Batch error handling** — if the Anthropic API rate-limits mid-batch, those individual labels show `ERROR` in the table; the user can retry just the flagged ones. A real production loop would add exponential backoff + a retry queue.
 - **`needs_review` vs `rejected` for fuzzy matches** — currently any fuzzy match downgrades to `needs_review`. Field-level thresholds are tunable in `lib/verify.ts` if compliance defines stricter rules.
 
@@ -225,7 +229,7 @@ yarn start             # serve the production build
 yarn typecheck         # tsc --noEmit
 yarn lint              # next lint
 yarn format            # prettier --write .
-yarn test              # Jest — unit + component + API route (52 tests)
+yarn test              # Jest — unit + component + API route (61 tests)
 yarn test:watch        # Jest watch mode
 yarn test:coverage     # Jest with coverage report
 yarn test:e2e:install  # one-time: install Playwright Chromium
@@ -238,7 +242,7 @@ yarn test:e2e          # Playwright smoke against the deployed URL
 
 | Layer | Runner | Files | What it covers |
 |---|---|---|---|
-| `lib/` unit | Jest | [`lib/__tests__/`](lib/__tests__/) | `normalize`, `similarity`, `parseAbv` / `parseVolumeMl`, `verifyWarning`, the full `runVerificationEngine` decision tree, and `citationsForVerdict` per beverage type. 36 tests. |
+| `lib/` unit | Jest | [`lib/__tests__/`](lib/__tests__/) | `normalize`, `similarity`, `parseAbv` / `parseVolumeMl`, `verifyWarning`, the full `runVerificationEngine` decision tree (including unparseable-input false-positive guards), `citationsForVerdict` per beverage type, and `citationUrl` ecfr.gov mapping. 45 tests. |
 | API route | Jest (node env) | [`app/api/verify/__tests__/route.test.ts`](app/api/verify/__tests__/route.test.ts) | `POST /api/verify` with the Anthropic SDK mocked — happy path, missing image, missing application, warning failure, upstream errors. 5 tests. |
 | Component | Jest (jsdom) + RTL | [`components/__tests__/`](components/__tests__/) | `ResultView`, `ApplicationForm`, `UploadZone` — render + user interaction + i18n. 11 tests. |
 | E2E | Playwright | [`tests/e2e/smoke.spec.ts`](tests/e2e/smoke.spec.ts) | Production smoke against the live Vercel URL — page load, theme cycle, locale switch, batch route, API reachability. Does **not** exercise `/api/verify` end-to-end (would burn Anthropic tokens on every CI run). |

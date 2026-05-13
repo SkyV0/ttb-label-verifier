@@ -9,8 +9,8 @@ export const ApplicationData = z.object({
   alcohol_content: z.string().min(1),
   net_contents: z.string().min(1),
   producer_name: z.string().min(1),
-  producer_address: z.string().optional().default(""),
-  country_of_origin: z.string().optional().default(""),
+  producer_address: z.string(),
+  country_of_origin: z.string(),
   beverage_type: BeverageType,
 });
 export type ApplicationData = z.infer<typeof ApplicationData>;

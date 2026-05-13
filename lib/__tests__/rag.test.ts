@@ -1,4 +1,4 @@
-import { citationsForVerdict } from "../rag";
+import { citationsForVerdict, citationUrl } from "../rag";
 import type { FieldResult, WarningResult } from "../types";
 
 const okWarning: WarningResult = { ok: true, reasons: [], detected: "..." };
@@ -47,6 +47,16 @@ describe("citationsForVerdict", () => {
   it("returns malt-beverage citations for beer", () => {
     const citations = citationsForVerdict("malt", [mismatchField("brand_name")], okWarning);
     expect(citations.some((c) => c.section === "27 CFR §7.22")).toBe(true);
+  });
+
+  it("builds an ecfr.gov URL from a CFR citation section", () => {
+    expect(citationUrl("27 CFR §16.21")).toBe(
+      "https://www.ecfr.gov/current/title-27/section-16.21",
+    );
+    expect(citationUrl("27 CFR §5.32")).toBe(
+      "https://www.ecfr.gov/current/title-27/section-5.32",
+    );
+    expect(citationUrl("garbage")).toBeNull();
   });
 
   it("includes the caps-specific warning citation when caps fail", () => {

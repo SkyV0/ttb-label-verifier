@@ -51,22 +51,29 @@ export class VerifyError extends Error {
 }
 
 export const MAX_FILE_BYTES = 20 * 1024 * 1024;
-export const MAX_BATCH_SIZE = 300;
+// Conservative cap: maxDuration=60s × concurrency=8 ≈ 96 labels at ~5s/label
+// before the function times out. Keep headroom for slow images.
+export const MAX_BATCH_SIZE = 80;
 
+// PDF is intentionally excluded: prebuilt `sharp` binaries on most hosts ship
+// without libvips poppler support (sharp.format.pdf.input === false), so the
+// pipeline would crash before reaching the vision model. If PDF support is
+// required later, rasterize page 1 with pdfjs-dist before passing to sharp.
 export const ALLOWED_MIME_TYPES = new Set([
   "image/png",
   "image/jpeg",
   "image/jpg",
   "image/webp",
   "image/gif",
-  "application/pdf",
 ]);
+
+const ALLOWED_EXTENSIONS = new Set(["png", "jpg", "jpeg", "webp", "gif"]);
 
 export function isAllowedFileType(file: File): boolean {
   if (ALLOWED_MIME_TYPES.has(file.type)) return true;
   // Some browsers report an empty MIME for dragged files — fall back to extension.
-  const ext = file.name.toLowerCase().split(".").pop();
-  return ext === "png" || ext === "jpg" || ext === "jpeg" || ext === "webp" || ext === "gif" || ext === "pdf";
+  const ext = file.name.toLowerCase().split(".").pop() ?? "";
+  return ALLOWED_EXTENSIONS.has(ext);
 }
 
 /**

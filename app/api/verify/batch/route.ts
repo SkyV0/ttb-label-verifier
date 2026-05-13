@@ -15,7 +15,7 @@ export const maxDuration = 60;
 
 const CONCURRENCY = 8;
 
-async function processOne(image: File, application: ApplicationData) {
+async function processOne(image: File, application: ApplicationData, signal?: AbortSignal) {
   const started = Date.now();
   if (image.size > MAX_FILE_BYTES) {
     throw new VerifyError(
@@ -28,7 +28,7 @@ async function processOne(image: File, application: ApplicationData) {
     throw new VerifyError("invalid_file_type", `${image.name}: unsupported type.`, 415);
   }
   const buf = Buffer.from(await image.arrayBuffer());
-  const { fields, usage } = await extractLabelFields(buf);
+  const { fields, usage } = await extractLabelFields(buf, signal);
   const elapsed = Date.now() - started;
   return runVerificationEngine(application, fields, elapsed, usage);
 }
@@ -76,7 +76,7 @@ export async function POST(req: Request) {
         if (i >= images.length) break;
         const img = images[i];
         try {
-          const r = await processOne(img, parsed.data);
+          const r = await processOne(img, parsed.data, req.signal);
           results[i] = { filename: img.name, result: r };
         } catch (err) {
           const ve = classifyError(err);

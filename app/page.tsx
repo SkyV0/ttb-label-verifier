@@ -1,19 +1,17 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import {
-  Suspense,
-  useCallback,
-  useRef,
-  useState,
-  useTransition,
-} from "react";
+import { Suspense, useCallback, useEffect, useRef, useState } from "react";
+import { FormProvider, useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useMutation } from "@tanstack/react-query";
 import { UploadZone } from "@/components/UploadZone";
 import { ApplicationForm } from "@/components/ApplicationForm";
 import { ErrorMessage } from "@/components/ErrorMessage";
 import { useI18n } from "@/components/I18nProvider";
-import type { ApplicationData, VerificationResult } from "@/lib/types";
+import { ApplicationData, type VerificationResult } from "@/lib/types";
 import type { ApiErrorBody, ErrorCode } from "@/lib/errors";
+import { SAMPLE_APPLICATION, getSampleLabelFile } from "@/lib/sample";
 
 const ResultView = dynamic(
   () => import("@/components/ResultView").then((m) => ({ default: m.ResultView })),
@@ -44,131 +42,177 @@ const EMPTY_APPLICATION: ApplicationData = {
   beverage_type: "spirits",
 };
 
-interface ErrorState {
-  code?: ErrorCode;
-  message: string;
+class VerifyApiError extends Error {
+  constructor(
+    public readonly code: ErrorCode,
+    message: string,
+  ) {
+    super(message);
+    this.name = "VerifyApiError";
+  }
+}
+
+interface VerifyVariables {
+  file: File;
+  application: ApplicationData;
+  signal: AbortSignal;
+}
+
+async function postVerify({ file, application, signal }: VerifyVariables): Promise<VerificationResult> {
+  const form = new FormData();
+  form.append("image", file);
+  form.append("application", JSON.stringify(application));
+  const res = await fetch("/api/verify", { method: "POST", body: form, signal });
+  if (!res.ok) {
+    const body = (await res.json().catch(() => ({}))) as Partial<ApiErrorBody>;
+    throw new VerifyApiError(body.error ?? "verification_failed", body.message ?? "Verification failed.");
+  }
+  return (await res.json()) as VerificationResult;
 }
 
 export default function HomePage() {
   const { t } = useI18n();
   const [file, setFile] = useState<File | null>(null);
-  const [application, setApplication] = useState<ApplicationData>(EMPTY_APPLICATION);
-  const [result, setResult] = useState<VerificationResult | null>(null);
-  const [error, setError] = useState<ErrorState | null>(null);
-  const [isPending, startTransition] = useTransition();
   const abortRef = useRef<AbortController | null>(null);
 
-  const submit = useCallback(() => {
-    setError(null);
-    if (!file) {
-      setError({ code: "missing_image", message: t("error.no_file") });
-      return;
-    }
+  const form = useForm<ApplicationData>({
+    resolver: zodResolver(ApplicationData),
+    defaultValues: EMPTY_APPLICATION,
+    mode: "onBlur",
+  });
 
+  const verify = useMutation<VerificationResult, Error, VerifyVariables>({
+    mutationFn: postVerify,
+  });
+
+  const onSubmit = form.handleSubmit((application) => {
+    if (!file) return;
     abortRef.current?.abort();
     const controller = new AbortController();
     abortRef.current = controller;
-
-    startTransition(async () => {
-      try {
-        const form = new FormData();
-        form.append("image", file);
-        form.append("application", JSON.stringify(application));
-        const res = await fetch("/api/verify", {
-          method: "POST",
-          body: form,
-          signal: controller.signal,
-        });
-
-        if (!res.ok) {
-          const body = (await res.json().catch(() => ({}))) as Partial<ApiErrorBody>;
-          setError({
-            code: body.error as ErrorCode | undefined,
-            message: body.message ?? t("error.verification_failed"),
-          });
-          return;
-        }
-        const data: VerificationResult = await res.json();
-        setResult(data);
-      } catch (e) {
-        if ((e as Error).name === "AbortError") {
-          setError({ code: "request_aborted", message: t("error.request_aborted") });
-          return;
-        }
-        setError({
-          code: "network_error",
-          message: e instanceof Error ? e.message : t("error.network_error"),
-        });
-      }
-    });
-  }, [file, application, t]);
+    verify.mutate({ file, application, signal: controller.signal });
+  });
 
   const reset = useCallback(() => {
     abortRef.current?.abort();
-    setResult(null);
+    verify.reset();
     setFile(null);
-    setError(null);
-  }, []);
+  }, [verify]);
 
   const cancel = useCallback(() => {
     abortRef.current?.abort();
   }, []);
 
-  if (result) {
+  const loadSample = useCallback(async () => {
+    try {
+      const sampleFile = await getSampleLabelFile();
+      setFile(sampleFile);
+      form.reset(SAMPLE_APPLICATION);
+    } catch {
+      // Sample generation failed (no canvas, blocked) — swallow silently.
+    }
+  }, [form]);
+
+  // Cmd/Ctrl+Enter submits from anywhere on the page (only while editing).
+  useEffect(() => {
+    if (verify.data) return;
+    const handler = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
+        e.preventDefault();
+        if (!verify.isPending && file) onSubmit();
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [verify.data, verify.isPending, file, onSubmit]);
+
+  if (verify.data) {
     return (
       <Suspense fallback={<ResultSkeleton />}>
-        <ResultView result={result} onReset={reset} />
+        <ResultView result={verify.data} file={file} onReset={reset} />
       </Suspense>
     );
   }
 
+  const apiError: { code: ErrorCode; message: string } | null =
+    verify.error instanceof VerifyApiError
+      ? { code: verify.error.code, message: verify.error.message }
+      : verify.error
+        ? { code: "network_error", message: verify.error.message }
+        : null;
+  const triedToSubmitWithoutFile =
+    !file && verify.isPaused === false && form.formState.submitCount > 0;
+
   return (
-    <div>
-      <h1>{t("app.title")}</h1>
-      <p className="lede">{t("app.subtitle")}</p>
+    <FormProvider {...form}>
+      <form onSubmit={onSubmit} noValidate>
+        <h1>{t("app.title")}</h1>
+        <p className="lede">{t("app.subtitle")}</p>
 
-      <div className="grid-2">
-        <UploadZone file={file} onChange={setFile} />
-        <ApplicationForm value={application} onChange={setApplication} disabled={isPending} />
-      </div>
-
-      {error ? (
-        <ErrorMessage
-          code={error.code}
-          message={error.code ? error.message : error.message}
-          onRetry={error.code === "request_aborted" ? undefined : submit}
-          onDismiss={() => setError(null)}
-          busy={isPending}
-        />
-      ) : null}
-
-      <div className="cta-row" style={{ gap: "var(--space-3)" }}>
-        <button
-          type="button"
-          className="primary"
-          onClick={submit}
-          disabled={isPending || !file}
-        >
-          {isPending ? t("action.verifying") : t("action.verify")}
-        </button>
-        {isPending ? (
-          <button type="button" onClick={cancel}>
-            {t("action.cancel")}
-          </button>
-        ) : null}
-      </div>
-
-      {isPending ? (
-        <div
-          className="progress progress--indeterminate"
-          role="progressbar"
-          aria-label={t("action.verifying")}
-          aria-busy="true"
-          aria-live="polite"
-        >
-          <div className="progress__bar" />
+        <div className="grid-2">
+          <UploadZone file={file} onChange={setFile} disabled={verify.isPending} />
+          <ApplicationForm disabled={verify.isPending} />
         </div>
-      ) : null}
-    </div>
+
+        {triedToSubmitWithoutFile ? (
+          <ErrorMessage code="missing_image" severity="warning" />
+        ) : null}
+
+        {apiError ? (
+          <ErrorMessage
+            code={apiError.code}
+            message={apiError.message}
+            onRetry={apiError.code === "request_aborted" ? undefined : () => onSubmit()}
+            onDismiss={() => verify.reset()}
+            busy={verify.isPending}
+          />
+        ) : null}
+
+        <div className="cta-row" style={{ gap: "var(--space-3)" }}>
+          {!verify.isPending ? (
+            <button
+              type="button"
+              onClick={loadSample}
+              disabled={verify.isPending}
+              title={t("action.try_sample_hint")}
+            >
+              {t("action.try_sample")}
+            </button>
+          ) : null}
+          <button
+            type="submit"
+            className="primary"
+            disabled={verify.isPending || !file}
+            aria-keyshortcuts="Meta+Enter Control+Enter"
+          >
+            {verify.isPending ? (
+              <>
+                <span className="btn-spinner" aria-hidden />
+                {t("action.verifying")}
+              </>
+            ) : (
+              t("action.verify")
+            )}
+          </button>
+          {verify.isPending ? (
+            <button type="button" onClick={cancel}>
+              {t("action.cancel")}
+            </button>
+          ) : null}
+        </div>
+
+        {verify.isPending ? (
+          <div
+            className="progress progress--indeterminate"
+            role="progressbar"
+            aria-label={t("action.verifying")}
+            aria-busy="true"
+            aria-live="polite"
+          >
+            <div className="progress__bar" />
+          </div>
+        ) : null}
+      </form>
+    </FormProvider>
   );
 }

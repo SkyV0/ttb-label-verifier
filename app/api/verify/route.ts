@@ -36,7 +36,7 @@ export async function POST(req: Request) {
     if (!isAllowedFileType(image)) {
       throw new VerifyError(
         "invalid_file_type",
-        "File type must be PNG, JPG, WebP, GIF, or PDF.",
+        "File type must be PNG, JPG, WebP, or GIF.",
         415,
         { type: image.type, name: image.name },
       );
@@ -53,7 +53,7 @@ export async function POST(req: Request) {
     }
 
     const buffer = Buffer.from(await image.arrayBuffer());
-    const { fields: extracted, usage } = await extractLabelFields(buffer);
+    const { fields: extracted, usage } = await extractLabelFields(buffer, req.signal);
     const elapsed = Date.now() - started;
     const result = runVerificationEngine(parsed.data, extracted, elapsed, usage);
     return NextResponse.json(result);

@@ -37,7 +37,6 @@ jobs:
 
       - name: Lint
         run: yarn lint
-        continue-on-error: true
 
       - name: Jest
         run: yarn test --ci
@@ -83,7 +82,7 @@ jobs:
     name: Playwright (against fresh deploy)
     needs: deploy
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 5
 
     steps:
       - uses: actions/checkout@v4
@@ -95,11 +94,30 @@ jobs:
 
       - run: yarn install --frozen-lockfile
 
-      - name: Install Playwright Chromium
-        run: yarn test:e2e:install
+      # Cache the Chromium binary keyed on the resolved Playwright version so
+      # subsequent runs skip the ~150 MB download entirely.
+      - name: Resolve Playwright version
+        id: pw
+        run: echo "version=$(node -p "require('@playwright/test/package.json').version")" >> "$GITHUB_OUTPUT"
+
+      - name: Cache Playwright browsers
+        id: pw-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ steps.pw.outputs.version }}
+
+      # ubuntu-latest already ships every shared lib Chromium needs, so we
+      # avoid `--with-deps`. The previous flag triggered an apt-get update path
+      # that hung this job for 9+ minutes on a flaky Azure Ubuntu mirror.
+      - name: Install Chromium (cache miss only)
+        if: steps.pw-cache.outputs.cache-hit != 'true'
+        run: yarn playwright install chromium
+        timeout-minutes: 3
 
       - name: Run E2E smoke against the fresh deploy
         run: yarn test:e2e
+        timeout-minutes: 3
         env:
           PLAYWRIGHT_BASE_URL: ${{ needs.deploy.outputs.url }}
 

@@ -1,38 +1,50 @@
 "use client";
 
-import { useCallback, useRef, useState, type ChangeEvent, type DragEvent } from "react";
+import { useCallback, useEffect, useRef, useState, type ChangeEvent, type DragEvent } from "react";
 import { useI18n } from "@/components/I18nProvider";
 
 interface Props {
   file: File | null;
   onChange: (file: File | null) => void;
   accept?: string;
+  disabled?: boolean;
 }
 
-export function UploadZone({ file, onChange, accept = "image/*,application/pdf" }: Props) {
+export function UploadZone({
+  file,
+  onChange,
+  accept = "image/png,image/jpeg,image/webp,image/gif",
+  disabled = false,
+}: Props) {
   const { t } = useI18n();
   const inputRef = useRef<HTMLInputElement>(null);
   const [dragging, setDragging] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
-  const setPreview = useCallback((f: File | null) => {
-    setPreviewUrl((prev) => {
-      if (prev) URL.revokeObjectURL(prev);
-      return f && f.type.startsWith("image/") ? URL.createObjectURL(f) : null;
-    });
-  }, []);
+  // Keep preview URL in sync with `file` and revoke when the URL changes or
+  // the component unmounts. Without revocation the blob stays alive for the
+  // life of the tab.
+  useEffect(() => {
+    if (!file || !file.type.startsWith("image/")) {
+      setPreviewUrl(null);
+      return;
+    }
+    const url = URL.createObjectURL(file);
+    setPreviewUrl(url);
+    return () => URL.revokeObjectURL(url);
+  }, [file]);
 
   const handleFile = useCallback(
     (f: File | null) => {
       onChange(f);
-      setPreview(f);
     },
-    [onChange, setPreview],
+    [onChange],
   );
 
   const onDrop = (e: DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     setDragging(false);
+    if (disabled) return;
     const f = e.dataTransfer.files?.[0] ?? null;
     if (f) handleFile(f);
   };
@@ -58,13 +70,13 @@ export function UploadZone({ file, onChange, accept = "image/*,application/pdf" 
                 fontWeight: 600,
               }}
             >
-              PDF
+              IMG
             </div>
           )}
           <div className="stack">
             <div style={{ fontWeight: 600, fontSize: "var(--font-size-lg)" }}>{file.name}</div>
             <div className="subtle">{(file.size / 1024 / 1024).toFixed(2)} MB</div>
-            <button type="button" onClick={() => handleFile(null)}>
+            <button type="button" onClick={() => handleFile(null)} disabled={disabled}>
               {t("upload.remove")}
             </button>
           </div>
@@ -76,10 +88,12 @@ export function UploadZone({ file, onChange, accept = "image/*,application/pdf" 
   return (
     <div
       role="button"
-      tabIndex={0}
-      className={`dropzone${dragging ? " active" : ""}`}
-      onClick={() => inputRef.current?.click()}
+      tabIndex={disabled ? -1 : 0}
+      aria-disabled={disabled || undefined}
+      className={`dropzone${dragging ? " active" : ""}${disabled ? " disabled" : ""}`}
+      onClick={() => !disabled && inputRef.current?.click()}
       onKeyDown={(e) => {
+        if (disabled) return;
         if (e.key === "Enter" || e.key === " ") {
           e.preventDefault();
           inputRef.current?.click();
@@ -87,13 +101,31 @@ export function UploadZone({ file, onChange, accept = "image/*,application/pdf" 
       }}
       onDragOver={(e) => {
         e.preventDefault();
-        setDragging(true);
+        if (!disabled) setDragging(true);
       }}
       onDragLeave={() => setDragging(false)}
       onDrop={onDrop}
       aria-label={t("upload.dropzone_idle")}
     >
-      <div style={{ fontSize: "var(--font-size-lg)", fontWeight: 600 }}>
+      <span className="dropzone__icon" aria-hidden>
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
+          <path
+            d="M12 16V4M12 4l-4 4M12 4l4 4"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+          <path
+            d="M4 14v4a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+      </span>
+      <div className="dropzone__title">
         {dragging ? t("upload.dropzone_active") : t("upload.dropzone_idle")}
       </div>
       <div className="dropzone__hint">{t("upload.accepted_types")}</div>
@@ -104,6 +136,7 @@ export function UploadZone({ file, onChange, accept = "image/*,application/pdf" 
         onChange={onInput}
         className="sr-only"
         tabIndex={-1}
+        disabled={disabled}
       />
     </div>
   );

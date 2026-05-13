@@ -105,6 +105,42 @@ describe("runVerificationEngine", () => {
     expect(addr.status).toBe("missing");
   });
 
+  it("does NOT silently pass when application ABV is unparseable (regression: false-positive guard)", () => {
+    const result = runVerificationEngine(
+      { ...application, alcohol_content: "not-a-number" },
+      baseExtracted,
+      100,
+      usage,
+    );
+    const abv = result.fields.find((f) => f.key === "alcohol_content")!;
+    expect(abv.status).toBe("missing");
+    expect(abv.note).toMatch(/could not be parsed/i);
+    expect(result.verdict).not.toBe("verified");
+  });
+
+  it("does NOT silently pass when application net_contents is unparseable", () => {
+    const result = runVerificationEngine(
+      { ...application, net_contents: "garbage" },
+      baseExtracted,
+      100,
+      usage,
+    );
+    const net = result.fields.find((f) => f.key === "net_contents")!;
+    expect(net.status).toBe("missing");
+    expect(result.verdict).not.toBe("verified");
+  });
+
+  it("includes producer_address only when the application supplies it", () => {
+    const without = runVerificationEngine(
+      { ...application, producer_address: "" },
+      baseExtracted,
+      100,
+      usage,
+    );
+    expect(without.fields.find((f) => f.key === "producer_address")).toBeUndefined();
+    expect(without.verdict).toBe("verified");
+  });
+
   it("includes country_of_origin in fields only when the application has it", () => {
     const without = runVerificationEngine(application, baseExtracted, 100, usage);
     expect(without.fields.find((f) => f.key === "country_of_origin")).toBeUndefined();

@@ -52,42 +52,50 @@ export interface ExtractionOutput {
   model: string;
 }
 
-export async function extractLabelFields(image: Buffer | ArrayBuffer): Promise<ExtractionOutput> {
+export async function extractLabelFields(
+  image: Buffer | ArrayBuffer,
+  signal?: AbortSignal,
+): Promise<ExtractionOutput> {
   const { data, mediaType } = await preprocessImage(image);
 
-  const response = await anthropic.messages.create({
-    model: VISION_MODEL,
-    max_tokens: 1024,
-    system: [
-      {
-        type: "text",
-        text: SYSTEM_PROMPT,
-        cache_control: { type: "ephemeral" },
-      },
-    ],
-    tools: [
-      {
-        ...TOOL,
-        cache_control: { type: "ephemeral" },
-      } as Anthropic.Messages.Tool,
-    ],
-    tool_choice: { type: "tool", name: "extract_label_fields" },
-    messages: [
-      {
-        role: "user",
-        content: [
-          {
-            type: "image",
-            source: { type: "base64", media_type: mediaType, data },
-          },
-          {
-            type: "text",
-            text: "Extract the TTB label fields from this image. Use null for anything not visible.",
-          },
-        ],
-      },
-    ],
-  });
+  const response = await anthropic.messages.create(
+    {
+      model: VISION_MODEL,
+      max_tokens: 1024,
+      system: [
+        {
+          type: "text",
+          text: SYSTEM_PROMPT,
+          cache_control: { type: "ephemeral" },
+        },
+      ],
+      tools: [
+        {
+          ...TOOL,
+          cache_control: { type: "ephemeral" },
+        } as Anthropic.Messages.Tool,
+      ],
+      tool_choice: { type: "tool", name: "extract_label_fields" },
+      messages: [
+        {
+          role: "user",
+          content: [
+            {
+              type: "image",
+              source: { type: "base64", media_type: mediaType, data },
+            },
+            {
+              type: "text",
+              text: "Extract the TTB label fields from this image. Use null for anything not visible.",
+            },
+          ],
+        },
+      ],
+    },
+    // Plumb the request's AbortSignal through so a client cancel halts the
+    // Anthropic call instead of burning tokens in the background.
+    signal ? { signal } : undefined,
+  );
 
   const toolBlock = response.content.find((b): b is Anthropic.Messages.ToolUseBlock => b.type === "tool_use");
   if (!toolBlock) {
