@@ -255,7 +255,7 @@ label {
 input[type="text"],
 input[type="number"],
 input[type="file"],
-select,
+select:not(.locale-switch__select),
 textarea {
   width: 100%;
   font-size: var(--font-size-base);
@@ -265,18 +265,25 @@ textarea {
   background: var(--bg-elevated);
   color: var(--text);
   font-family: inherit;
+  line-height: 1.4;
+  height: 48px;
+}
+
+textarea {
+  height: auto;
+  min-height: 48px;
 }
 
 input[type="text"]:hover,
 input[type="number"]:hover,
-select:hover,
+select:not(.locale-switch__select):hover,
 textarea:hover {
   border-color: var(--border-strong);
 }
 
 input[type="text"]:focus,
 input[type="number"]:focus,
-select:focus,
+select:not(.locale-switch__select):focus,
 textarea:focus,
 input[type="file"]:focus {
   outline: 3px solid var(--focus-glow);
@@ -287,6 +294,21 @@ input[type="file"]:focus {
 input[type="file"] {
   cursor: pointer;
   padding: var(--space-3);
+}
+
+/* Custom chevron for form-grid selects — native chevron is removed and
+   replaced with an SVG so spirits/wine/malt selects match input height. */
+.form-grid select {
+  appearance: none;
+  -webkit-appearance: none;
+  padding-right: 40px;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'><path d='M1 1l5 5 5-5' stroke='%23555' stroke-width='1.8' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right var(--space-4) center;
+}
+
+[data-theme="dark"] .form-grid select {
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'><path d='M1 1l5 5 5-5' stroke='%23b0a89c' stroke-width='1.8' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg>");
 }
 
 /* ============================================================
@@ -416,13 +438,22 @@ button.primary:active:not(:disabled) {
   height: 36px;
   border-radius: var(--radius);
   background: var(--accent);
-  display: grid;
+  display: inline-grid;
   place-items: center;
   color: var(--accent-fg);
-  font-weight: 700;
-  font-size: 13px;
-  letter-spacing: 0.05em;
   box-shadow: var(--shadow-sm);
+  flex-shrink: 0;
+}
+
+.app-header__brand-text {
+  white-space: nowrap;
+}
+
+.app-header__divider {
+  width: 1px;
+  height: 22px;
+  background: var(--border);
+  margin: 0 var(--space-1);
 }
 
 .app-header__nav {
@@ -453,6 +484,9 @@ button.primary:active:not(:disabled) {
 }
 
 .icon-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   padding: var(--space-2) var(--space-3);
   border-radius: var(--radius);
   background: transparent;
@@ -460,12 +494,68 @@ button.primary:active:not(:disabled) {
   font-size: var(--font-size-sm);
   font-weight: 500;
   color: var(--text-muted);
-  min-height: 36px;
+  height: 36px;
+  min-width: 36px;
+  line-height: 1;
 }
 
 .icon-button:hover {
   background: var(--bg-muted);
   color: var(--text);
+  border-color: var(--border-strong);
+}
+
+.icon-button--square {
+  width: 36px;
+  padding: 0;
+}
+
+/* Locale switcher — custom-styled select that does NOT inherit form-input
+   chrome. Wrapped in a <label> so the chevron sits inside the box. */
+.locale-switch {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  height: 36px;
+}
+
+.locale-switch__select {
+  appearance: none;
+  -webkit-appearance: none;
+  height: 36px;
+  padding: 0 26px 0 var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--text-muted);
+  font-family: inherit;
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  line-height: 1;
+}
+
+.locale-switch__select:hover {
+  background: var(--bg-muted);
+  color: var(--text);
+  border-color: var(--border-strong);
+}
+
+.locale-switch__select:focus-visible {
+  outline: 3px solid var(--focus-glow);
+  outline-offset: 2px;
+  border-color: var(--focus);
+}
+
+.locale-switch__chevron {
+  position: absolute;
+  right: var(--space-3);
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
+  color: var(--text-muted);
+  font-size: 11px;
 }
 
 /* ============================================================

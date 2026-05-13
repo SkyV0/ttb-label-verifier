@@ -15,7 +15,8 @@
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
     "test:e2e": "playwright test",
-    "test:e2e:install": "playwright install --with-deps chromium"
+    "test:e2e:install": "playwright install --with-deps chromium",
+    "make:labels": "node scripts/generate-test-labels.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.40.0",

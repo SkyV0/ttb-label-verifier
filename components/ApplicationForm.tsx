@@ -19,11 +19,25 @@ export function ApplicationForm({ value, onChange, disabled }: Props) {
       <div className="form-grid">
         <div>
           <label htmlFor="brand_name">{t("form.brand_name")}</label>
-          <input id="brand_name" type="text" value={value.brand_name} onChange={(e) => update("brand_name", e.target.value)} disabled={disabled} />
+          <input
+            id="brand_name"
+            type="text"
+            placeholder="OLD TOM DISTILLERY"
+            value={value.brand_name}
+            onChange={(e) => update("brand_name", e.target.value)}
+            disabled={disabled}
+          />
         </div>
         <div>
           <label htmlFor="class_type">{t("form.class_type")}</label>
-          <input id="class_type" type="text" value={value.class_type} onChange={(e) => update("class_type", e.target.value)} disabled={disabled} />
+          <input
+            id="class_type"
+            type="text"
+            placeholder="Kentucky Straight Bourbon Whiskey"
+            value={value.class_type}
+            onChange={(e) => update("class_type", e.target.value)}
+            disabled={disabled}
+          />
         </div>
         <div>
           <label htmlFor="alcohol_content">{t("form.alcohol_content")}</label>
@@ -49,15 +63,36 @@ export function ApplicationForm({ value, onChange, disabled }: Props) {
         </div>
         <div>
           <label htmlFor="producer_name">{t("form.producer_name")}</label>
-          <input id="producer_name" type="text" value={value.producer_name} onChange={(e) => update("producer_name", e.target.value)} disabled={disabled} />
+          <input
+            id="producer_name"
+            type="text"
+            placeholder="Old Tom Distillery, LLC"
+            value={value.producer_name}
+            onChange={(e) => update("producer_name", e.target.value)}
+            disabled={disabled}
+          />
         </div>
         <div>
           <label htmlFor="producer_address">{t("form.producer_address")}</label>
-          <input id="producer_address" type="text" value={value.producer_address} onChange={(e) => update("producer_address", e.target.value)} disabled={disabled} />
+          <input
+            id="producer_address"
+            type="text"
+            placeholder="123 Bourbon Road, Lexington, KY"
+            value={value.producer_address}
+            onChange={(e) => update("producer_address", e.target.value)}
+            disabled={disabled}
+          />
         </div>
         <div>
           <label htmlFor="country_of_origin">{t("form.country_of_origin")}</label>
-          <input id="country_of_origin" type="text" value={value.country_of_origin} onChange={(e) => update("country_of_origin", e.target.value)} disabled={disabled} />
+          <input
+            id="country_of_origin"
+            type="text"
+            placeholder="Imports only"
+            value={value.country_of_origin}
+            onChange={(e) => update("country_of_origin", e.target.value)}
+            disabled={disabled}
+          />
         </div>
         <div>
           <label htmlFor="beverage_type">{t("form.beverage_type")}</label>
